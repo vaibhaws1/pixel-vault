@@ -4,9 +4,11 @@ pragma solidity ^0.8.13;
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
-contract NFTCollection is ERC721Enumerable, Ownable {
+contract ELEN_E6883_NFT is ERC721URIStorage, Ownable {
     using SafeMath for uint256;
     using Counters for Counters.Counter;
 
@@ -50,18 +52,12 @@ contract NFTCollection is ERC721Enumerable, Ownable {
         _safeMint(msg.sender, newTokenID);
         _tokenIds.increment();
     }
-    
-    // Returns the ids of the NFTs owned by the wallet address
-    function tokensOfOwner(address _owner) external view returns (uint[] memory) {
-        uint tokenCount = balanceOf(_owner);
-        uint[] memory tokensId = new uint256[](tokenCount);
 
-        for (uint i = 0; i < tokenCount; i++) {
-            tokensId[i] = tokenOfOwnerByIndex(_owner, i);
-        }
-        return tokensId;
+    function createNFT(uint256 newTokenID, string memory data) public {
+        _safeMint(msg.sender, newTokenID);
+        _setTokenURI(newTokenID, data);
     }
-    
+
     // Withdraw the ether in the contract
     function withdraw() public payable onlyOwner {
         uint balance = address(this).balance;
