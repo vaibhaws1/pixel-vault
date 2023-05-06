@@ -22,6 +22,24 @@ contract ELEN_E6883_NFT is ERC721URIStorage, Ownable {
 
     string public baseTokenURI;
 
+    //*** VK added code #1***
+    struct Sale {
+        address seller;
+        uint256 tokenId;
+        uint256 price;
+        bool active;
+    }
+
+    address public _contractOwner;
+    uint256 public _price;
+    IERC721 public nftContract;
+    mapping (uint256 => Sale) public tokenIdToSale;
+    event SaleCreated(address seller, uint256 tokenId, uint256 price);
+    event SaleCancelled(address seller, uint256 tokenId);
+    event SaleSuccessful(address buyer, uint256 tokenId, uint256 price);
+    event nftdetails(address nftAddress, uint256 tokenId);
+    //*** VK end code #1 ***
+
     constructor(string memory baseURI, string memory name, string memory symbol) ERC721(name, symbol) {
         setBaseURI(baseURI);
     }
@@ -77,5 +95,72 @@ contract ELEN_E6883_NFT is ERC721URIStorage, Ownable {
             _mintSingleNFT();
         }
     }
+
+    //*** VK added code #2 ***
+    function getOwner (uint256 tokenId) public returns (address owner){
+        emit nftdetails ( msg.sender, tokenId);
+        return _contractOwner;
+    }
+
+    function setOwner (uint256 tokenId, address  newAddress) public {
+        _contractOwner = newAddress;
+        emit nftdetails ( msg.sender, tokenId);
+    }
+
+    function createSale(uint256 tokenId, uint256 price) external {
+        require(nftContract.ownerOf(tokenId) == msg.sender, "Only token owner can create sale");
+        require(price > 0, "Price must be greater than zero");
+        require(tokenIdToSale[tokenId].active == false, "Token already listed for sale");
+
+        Sale memory sale = Sale({
+            seller: msg.sender,
+            tokenId: tokenId,
+            price: price,
+            active: true
+        });
+        tokenIdToSale[tokenId] = sale;
+        _price = sale.price;
+        emit SaleCreated(msg.sender, tokenId, price);
+    }
+
+    function getPrice (uint256 tokenId) public returns (uint256 price){
+        return _price;
+    }
+
+    function cancelSale(uint256 tokenId) external {
+        require(tokenIdToSale[tokenId].seller == msg.sender, "Only seller can cancel sale");
+        require(tokenIdToSale[tokenId].active == true, "Sale already cancelled");
+
+        delete tokenIdToSale[tokenId];
+
+        emit SaleCancelled(msg.sender, tokenId);
+    }
+
+    function sellNFT(uint256 tokenId) external payable {
+        Sale memory sale = tokenIdToSale[tokenId];
+        require(sale.active == true, "Sale is not active");
+        require(msg.value == sale.price, "Incorrect amount sent");
+
+        address seller = sale.seller;
+        uint256 price = sale.price;
+
+        delete tokenIdToSale[tokenId];
+
+        // Transfer the NFT to the buyer
+        nftContract.safeTransferFrom(seller, msg.sender, tokenId);
+
+        // Transfer the payment to the seller
+        (bool success,) = seller.call{value: price}("");
+        require(success, "Transfer failed");
+
+        emit SaleSuccessful(msg.sender, tokenId, price);
+    }
+
+    function delistNFT(uint256 tokenID) public {
+        delete _tokenIds ;
+        delete _contractOwner ;
+    }
+
+    //*** VK end code #2 ***
 }
 
