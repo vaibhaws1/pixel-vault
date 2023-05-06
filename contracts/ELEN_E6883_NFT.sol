@@ -21,6 +21,24 @@ contract ELEN_E6883_NFT is ERC721URIStorage, Ownable {
     uint public constant MAX_PER_MINT = 5;
 
     string public baseTokenURI;
+    
+    //*** VK added code #1***
+    struct Sale {
+        address seller;
+        uint256 tokenId;
+        uint256 price;
+        bool active;
+    }
+
+    address public _contractOwner;
+    uint256 public _price;
+    IERC721 public nftContract;
+    mapping (uint256 => Sale) public tokenIdToSale;
+    event SaleCreated(address seller, uint256 tokenId, uint256 price);
+    event SaleCancelled(address seller, uint256 tokenId);
+    event SaleSuccessful(address buyer, uint256 tokenId, uint256 price);
+    event nftdetails(address nftAddress, uint256 tokenId);
+    //*** VK end code #1 ***
 
     constructor(string memory baseURI, string memory name, string memory symbol) ERC721(name, symbol) {
         setBaseURI(baseURI);
